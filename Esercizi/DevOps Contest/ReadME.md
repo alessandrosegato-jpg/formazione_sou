@@ -1,3 +1,7 @@
+
+## DevOps Contest
+
+```ruby
 Vagrant.configure("2") do |config|
 
           # ROCKY2 - WEB SERVER  
@@ -72,4 +76,6 @@ EOF
   end
 
 end
+```
 
+Ho creato una macchina server installando podman che crea un container con dentro il web server Apache, come porta ho aperto sia con firewalld che con SElinux la 8443, perchè ovviamente è in SSL, di conseguenza ho generato i certificati e per far si che tutto funzionasse, ho creato una configurazione SSL dentro al file del container, aggiungendo ovviamente anche i certificati. Infine faccio partire il container, dove oltre a dirgli la libreria dove prendere il server Apache gli aggiungo i certificati e il file di configurazione SSL. Il sito può essere visualizzato dalla seconda macchina client che ho creato!
