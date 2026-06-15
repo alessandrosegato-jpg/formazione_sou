@@ -4,7 +4,7 @@
 ```ruby
 Vagrant.configure("2") do |config|
 
-          # ROCKY2 - WEB SERVER  
+          # ROCKY1 - WEB SERVER  
   config.vm.define "rocky1" do |vm|
     vm.vm.box = "generic/rocky9"
     vm.vm.hostname = "rocky1"
@@ -57,7 +57,7 @@ EOF
     end
   end
 
-          # ROCKY3 - CLIENT
+          # ROCKY2 - CLIENT
   config.vm.define "rocky2" do |vm|
     vm.vm.box = "generic/rocky9"
     vm.vm.hostname = "rocky2"
