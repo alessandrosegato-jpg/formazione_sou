@@ -1,0 +1,97 @@
+#!/usr/bin/env bash 
+
+ott='(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])'
+
+while true; do
+
+read -p "Inserisci un IPV4 valido: " ip
+
+if [[ $ip =~ ^$ott\.$ott\.$ott\.$ott$ ]]; then
+        break
+fi
+        echo
+        echo "Indirizzo IP non valido, riprova.. "
+done
+
+if [[ $ip =~ ^0\.($ott\.){2}$ott$ ]]; then
+        echo 
+        echo "Indirizzo IP: $ip"
+        echo "Funzione: Indirizzi zero"
+        echo "Classe: A"
+
+elif
+   [[ $ip =~ ^10\.($ott\.){2}$ott$ ]]; then
+        echo
+        echo "Indirizzo IP: $ip"
+        echo "Funzione: IP privati"
+        echo "Classe: A"
+
+elif
+   [[ $ip =~ ^127\.($ott\.){2}$ott$ ]]; then
+        echo
+        echo "Indirizzo IP: $ip"
+        echo "Funzione: Indirizzi loopback"
+        echo "Classe: A"
+
+elif
+   [[ $ip =~ ^169\.254\.$ott\.$ott$ ]]; then
+        echo
+        echo "Indirizzo IP: $ip"
+        echo "Funzione: Indirizzi link local"
+        echo "Classe: B"        
+
+elif
+   [[ $ip =~ ^172\.(1[6-9]|2[0-9]|3[0-1])\.$ott\.$ott$ ]]; then
+        echo
+        echo "Indirizzo IP: $ip"
+        echo "Funzione: IP privati"
+        echo "Classe: B"        
+
+elif
+   [[ $ip =~ ^192\.0\.2\.$ott$ ]]; then
+        echo
+        echo "Indirizzo IP: $ip"
+        echo "Funzione: IP riservati IANA"
+        echo "Classe: C"
+
+elif
+   [[ $ip =~ ^192\.88\.99\.$ott$ ]]; then
+        echo
+        echo "Indirizzo IP: $ip"
+        echo "Funzione: IP Anycast"
+        echo "Classe: C"
+
+elif
+   [[ $ip =~ ^192\.168\.$ott\.$ott$ ]]; then
+        echo
+        echo "Indirizzo IP: $ip"
+        echo "Funzione: IP privati"
+        echo "Classe: C"
+
+elif
+   [[ $ip =~ ^198\.(1[8-9])\.$ott\.$ott$ ]]; then
+        echo
+        echo "Indirizzo IP: $ip"
+        echo "Funzione: IP Benchmark"
+        echo "Classe: C"
+
+elif
+   [[ $ip =~ ^(22[4-9]|23[0-9])\.($ott\.){2}$ott$ ]]; then
+        echo
+        echo "Indirizzo IP: $ip"
+        echo "Funzione: IP Multicast"
+        echo "Classe: D"
+
+elif
+   [[ $ip =~ ^(24[0-9]|25[0-5])\.($ott\.){2}$ott$ ]]; then
+        echo
+        echo "Indirizzo IP: $ip"
+        echo "Funzione: IP riservati"
+        echo "Classe: E"
+
+else
+        echo
+        echo "Indirizzo IP: $ip"
+        echo "Funzione: IP pubblico"
+
+fi
