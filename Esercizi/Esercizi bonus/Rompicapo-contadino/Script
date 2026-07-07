@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+
+vm_D="192.168.3.3"
+user="vagrant"
+
+contadino="S"
+lupo="S"
+capra="S"
+cavolo="S"
+
+container1() {
+    if [ "$contadino" = "S" ]; then
+        docker stop contadino &>/dev/null
+        ssh ${user}@${vm_D} docker start contadino &>/dev/null
+        contadino="D"
+    else
+        ssh ${user}@${vm_D} docker stop contadino &>/dev/null
+        docker start contadino &>/dev/null
+        contadino="S"
+    fi
+}
+container2() {
+    if [ "$lupo" = "S" ]; then
+        docker stop lupo &>/dev/null
+        ssh ${user}@${vm_D} docker start lupo &>/dev/null
+        lupo="D"
+        container1
+    else
+        ssh ${user}@${vm_D} docker stop lupo &>/dev/null
+        docker start lupo &>/dev/null
+        lupo="S"
+        container1
+    fi
+}
+container3() {
+    if [ "$capra" = "S" ]; then
+        docker stop capra &>/dev/null
+        ssh ${user}@${vm_D} docker start capra &>/dev/null
+        capra="D"
+        container1
+    else
+        ssh ${user}@${vm_D} docker stop capra &>/dev/null
+        docker start capra &>/dev/null
+        capra="S"
+        container1
+    fi
+}
+container4() {
+    if [ "$cavolo" = "S" ]; then
+        docker stop cavolo &>/dev/null
+        ssh ${user}@${vm_D} docker start cavolo &>/dev/null
+        cavolo="D"
+        container1
+    else
+        ssh ${user}@${vm_D} docker stop cavolo &>/dev/null
+        docker start cavolo &>/dev/null
+        cavolo="S"
+        container1
+    fi
+}
+pulizia() {
+    docker stop contadino lupo capra cavolo &>/dev/null
+    ssh ${user}@${vm_D} docker stop contadino lupo capra cavolo &>/dev/null
+}
+
+vittoria() {
+if [ "$contadino" == "D" ] && [ "$lupo" == "D" ] && [ "$capra" == "D" ] && [ "$cavolo" == "D" ]; then
+        echo "Complimenti! Hai vinto."
+        exit 0
+fi
+}
+
+sconfitta() {
+if [[ "$lupo" == "$capra" && "$lupo" != "$contadino" ]]; then
+      echo "Hai perso, il lupo ha mangiato la capra..."
+      exit 1
+fi
+
+if [[ "$capra" == "$cavolo" && "$capra" != "$contadino" ]]; then
+      echo "Hai perso, la capra ha mangiato il cavolo..."
+      exit 1
+fi
+}
+
+docker start contadino lupo capra cavolo &>/dev/null
+
+trap pulizia EXIT
+
+while true; do
+echo
+echo "====================="
+echo "        STATO"
+echo "====================="
+echo
+echo "Sponda S"
+docker ps --format "{{.Names}}"
+echo
+echo "Sponda D"
+ssh ${user}@${vm_D} docker ps --format "{{.Names}}"
+echo
+echo "Scegli cosa portare:"
+echo "1) Contadino"
+echo "2) Lupo"
+echo "3) Capra"
+echo "4) Cavolo"
+echo "====================="
+echo
+read -p "Selezione: " sponda
+
+case $sponda in
+        1)
+            container1
+            ;;
+        2)
+        if [ "$contadino" != "$lupo" ]; then
+             echo "Il lupo non è sulla stessa sponda del contadino, riprova."
+             continue
+        fi
+            container2
+            ;;
+        3)
+        if [ "$contadino" != "$capra" ]; then
+             echo "La capra non è sulla stessa sponda del contadino, riprova."
+             continue
+        fi
+            container3
+            ;;
+        4)
+        if [ "$contadino" != "$cavolo" ]; then
+             echo "Il cavolo non è sulla stessa sponda del contadino, riprova."
+             continue
+        fi
+            container4
+            ;;
+        *)
+            echo "Inserisci un opzione valida."
+            ;;
+esac
+
+vittoria
+sconfitta
+done
