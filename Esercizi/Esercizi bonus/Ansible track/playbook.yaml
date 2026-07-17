@@ -1,0 +1,101 @@
+---
+- name: Esercitazione1
+  hosts: all
+  become: true
+  gather_facts: false
+  tags:
+    - "1"
+
+  vars:
+    pacchetti:
+      nginx:
+        state: present
+      ufw:
+        state: present
+      curl:
+        state: absent
+
+    utenti:
+      - name: mario
+        shell: /bin/bash
+        group: sudo
+        state: present
+        home: /home/mario
+
+      - name: luigi
+        shell: /bin/bash
+        group: sudo
+        state: present
+        home: /home/luigi
+
+  tasks:
+    - name: Gestione pacchetti
+      ansible.builtin.package:
+        name: "{{ item.key }}"
+        state: "{{ item.value.state }}"
+      loop: "{{ pacchetti | dict2items }}"
+
+    - name: Crea utenti
+      ansible.builtin.user:
+        name: "{{ item.name }}"
+        state: "{{ item.state }}"
+        group: "{{ item.group }}"
+        shell: "{{ item.shell }}"
+        home: "{{ item.home }}"
+      loop: "{{ utenti }}"
+
+    - name: Carica il vault
+      ansible.builtin.include_vars:
+        file: vault.yaml
+
+    - name: Stampa le password di Mario
+      ansible.builtin.debug:
+        msg: La password di Mario è {{ password_mario }}
+
+    - name: Stampa le password di Luigi
+      ansible.builtin.debug:
+        msg: La password di Luigi è {{ password_luigi }}
+
+
+- name: Esercitazione2
+  hosts: all
+  become: true
+  gather_facts: false
+  tags:
+    - "2"
+
+  vars:
+    max_file:
+      "{{ 10000 if ambiente == 'produzione' else 1000 }}"
+
+    utenti:
+      - fabio
+      - tozzi
+
+  tasks:
+    - name: Imposta soft limit nofile
+      ansible.builtin.lineinfile:
+        path: /etc/security/limits.conf
+        line: "{{ item }} soft nofile {{ max_file }}"
+        state: present
+        create: true
+        mode: "0644"
+      loop: "{{ utenti }}"
+
+    - name: Imposta hard limit nofile
+      ansible.builtin.lineinfile:
+        path: /etc/security/limits.conf
+        line: "{{ item }} hard nofile {{ max_file }}"
+        state: present
+        create: true
+        mode: "0644"
+      loop: "{{ utenti }}"
+
+    - name: Aggiungi blocco in un file
+      ansible.builtin.blockinfile:
+        path: /etc/security/access.conf
+        insertbefore: "#-:ALL:ALL"
+        block: |
+          {% for utente in utenti %}
+          +:{{ utente }}:ALL
+          {% endfor -%}
