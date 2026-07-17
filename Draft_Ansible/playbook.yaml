@@ -1,0 +1,51 @@
+---
+- name: Installazione Jenkins
+  hosts: all
+  become: true
+  gather_facts: false
+
+  vars_files:
+    - vault.yaml
+
+  tasks:
+    - name: Prendi script docker
+      ansible.builtin.get_url:
+        url: https://get.docker.com
+        dest: /root/get-docker.sh
+        mode: "0755"
+
+    - name: Scarica docker
+      ansible.builtin.command:
+        cmd: /root/get-docker.sh
+        creates: /usr/bin/docker
+
+    - name: Crea rete docker per Jenkins
+      community.docker.docker_network:
+        name: jenkins_net
+
+    - name: Crea container Jenkins
+      community.docker.docker_container:
+        name: jenkins
+        image: jenkins/jenkins:latest
+        state: started
+        restart_policy: unless-stopped
+        networks:
+          - name: jenkins_net
+        networks_cli_compatible: true
+        ports:
+          - "8080:8080"
+          - "50000:50000"
+
+    - name: Crea container agent
+      community.docker.docker_container:
+        name: "{{ agent_name }}"
+        image: jenkins/inbound-agent:latest
+        state: started
+        restart_policy: unless-stopped
+        networks:
+          - name: jenkins_net
+        networks_cli_compatible: true
+        env:
+          JENKINS_URL: "{{ jenkins_url }}"
+          JENKINS_AGENT_NAME: "{{ agent_name }}"
+          JENKINS_SECRET: "{{ agent_secret }}"
