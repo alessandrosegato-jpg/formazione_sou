@@ -1,29 +1,67 @@
 ---
-- name: Installazione Jenkins
+- name: Installazione Jenkins con Docker
   hosts: all
   become: true
-  gather_facts: false
 
   vars_files:
     - vault.yaml
 
   tasks:
-    - name: Prendi script docker
-      ansible.builtin.get_url:
-        url: https://get.docker.com
-        dest: /root/get-docker.sh
+    - name: Installa ca-certificates
+      ansible.builtin.package:
+        name: ca-certificates
+        state: present
+
+    - name: Crea cartella chiave GPG
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
         mode: "0755"
 
-    - name: Scarica docker
-      ansible.builtin.command:
-        cmd: /root/get-docker.sh
-        creates: /usr/bin/docker
+    - name: Prendi chiave con curl
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode : "0444"
+
+    - name: Aggiungi repository Docker
+      ansible.builtin.copy:
+        dest: /etc/apt/sources.list.d/docker.sources
+        mode: "0644"
+        content: |
+          Types: deb
+          URIs: https://download.docker.com/linux/ubuntu
+          Suites: {{ ansible_distribution_release }}
+          Components: stable
+          Architectures: {{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }}
+          Signed-By: /etc/apt/keyrings/docker.asc
+
+    - name: Installa pacchetti Docker
+      ansible.builtin.package:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: true
 
     - name: Crea rete docker per Jenkins
       community.docker.docker_network:
         name: jenkins_net
 
-    - name: Crea container Jenkins
+    - name: Crea volume persistente Master
+      community.docker.docker_volume:
+        name: jenkins-volume
+        state: present
+
+    - name: Crea volume persistente Agent
+      community.docker.docker_volume:
+        name: jenkins-volume-agent
+        state: present
+
+    - name: Crea container Jenkins Master
       community.docker.docker_container:
         name: jenkins
         image: jenkins/jenkins:latest
@@ -35,8 +73,10 @@
         ports:
           - "8080:8080"
           - "50000:50000"
+        volumes:
+          - jenkins-volume:/var/jenkins-volume
 
-    - name: Crea container agent
+    - name: Crea container Jenkins Agent
       community.docker.docker_container:
         name: "{{ agent_name }}"
         image: jenkins/inbound-agent:latest
@@ -45,6 +85,8 @@
         networks:
           - name: jenkins_net
         networks_cli_compatible: true
+        volumes:
+          - jenkins-volume-agent:/var/jenkins-volume-agent
         env:
           JENKINS_URL: "{{ jenkins_url }}"
           JENKINS_AGENT_NAME: "{{ agent_name }}"
